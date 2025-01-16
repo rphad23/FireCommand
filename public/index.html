@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -88,6 +89,7 @@
     }
   </style>
 </head>
+
 <body>
   <h1>MUN Motion Manager</h1>
   <button id="add-motion">Add Motion</button>
@@ -117,7 +119,8 @@
       <button data-time="9-45">9 min / 45 sec</button>
     </div>
     <label>
-      Custom: Total Time (min): <input type="number" id="total-time" min="1"> Speaking Time (sec): <input type="number" id="speaking-time" min="1">
+      Custom: Total Time (min): <input type="number" id="total-time" min="1"> Speaking Time (sec): <input type="number"
+        id="speaking-time" min="1">
     </label>
     <p class="error" id="error-msg"></p>
     <br>
@@ -135,12 +138,16 @@
       <button id="reset-timer">Yield to Chair</button>
       <button id="close-timer">Close</button>
     </div>
+    <div class="now-speaking" id="now-speaking"></div>
+    <p class="error" id="timer-error-msg" style="color: red; display: none;">Time's up! Click "Yield to Chair" to
+      continue.</p>
+
     <div class="speaker-list">
       <h4>Speakers</h4>
+      <div class="now-speaking" id="now-speaking"></div>
       <ul id="speaker-list"></ul>
       <button id="add-speaker">Add Speaker</button>
     </div>
-    <div class="now-speaking" id="now-speaking"></div>
   </div>
 
   <!-- Presenter Choice Modal -->
@@ -323,15 +330,19 @@
             speakingRemaining--;
             updateTimerDisplay();
           } else {
-            speakingRemaining = speakingTime;
-            const finishedSpeaker = speakers.shift();
-            if (finishedSpeaker) {
-              speakers.push(null);
-            }
-            updateSpeakerList();
-            updateTimerDisplay();
+            // Stop both timers when speaking time is up
+            clearInterval(speakingTimer);
+            speakingTimer = null;
+
+            clearInterval(totalTimer);
+            totalTimer = null;
+
+            // Show the red message in the modal
+            const timerErrorMsg = document.getElementById('timer-error-msg');
+            timerErrorMsg.style.display = 'block';
           }
         }, 1000);
+
       }
 
       function stopTimer() {
@@ -342,19 +353,51 @@
       }
 
       function resetTimer() {
-  // Reset the speaking timer
-  speakingRemaining = speakingTime;
+        // Hide the error message
+        const timerErrorMsg = document.getElementById('timer-error-msg');
+        timerErrorMsg.style.display = 'none';
 
-  // Remove the current speaker and move to the next one
-  const finishedSpeaker = speakers.shift(); // Remove the first speaker
-  if (finishedSpeaker) {
-    speakers.push(null); // Add an empty slot at the end
-  }
+        // Reset the speaking timer
+        speakingRemaining = speakingTime;
 
-  // Update the UI to reflect the speaker list and the "Now Speaking" section
-  updateSpeakerList();
-  updateTimerDisplay();
-}
+        // Remove the current speaker and move to the next one
+        const finishedSpeaker = speakers.shift();
+        if (finishedSpeaker) {
+          speakers.push(null); // Add an empty slot at the end
+        }
+
+        // Update the speaker list and display
+        updateSpeakerList();
+        updateTimerDisplay();
+
+        // Restart both timers
+        totalTimer = setInterval(() => {
+          if (totalRemaining > 0) {
+            totalRemaining--;
+            updateTimerDisplay();
+          } else {
+            clearInterval(totalTimer);
+            totalTimer = null;
+          }
+        }, 1000);
+
+        speakingTimer = setInterval(() => {
+          if (speakingRemaining > 0) {
+            speakingRemaining--;
+            updateTimerDisplay();
+          } else {
+            clearInterval(speakingTimer);
+            speakingTimer = null;
+            clearInterval(totalTimer);
+            totalTimer = null;
+
+            // Show the red message again
+            timerErrorMsg.style.display = 'block';
+          }
+        }, 1000);
+      }
+
+
 
 
       startTimerButton.addEventListener('click', startTimer);
@@ -368,4 +411,5 @@
     });
   </script>
 </body>
+
 </html>
