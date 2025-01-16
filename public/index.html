@@ -1,89 +1,371 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Welcome to Firebase Hosting</title>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MUN Motion Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
 
-    <!-- update the version number as needed -->
-    <script defer src="/__/firebase/11.1.0/firebase-app-compat.js"></script>
-    <!-- include only the Firebase features as you need -->
-    <script defer src="/__/firebase/11.1.0/firebase-auth-compat.js"></script>
-    <script defer src="/__/firebase/11.1.0/firebase-database-compat.js"></script>
-    <script defer src="/__/firebase/11.1.0/firebase-firestore-compat.js"></script>
-    <script defer src="/__/firebase/11.1.0/firebase-functions-compat.js"></script>
-    <script defer src="/__/firebase/11.1.0/firebase-messaging-compat.js"></script>
-    <script defer src="/__/firebase/11.1.0/firebase-storage-compat.js"></script>
-    <script defer src="/__/firebase/11.1.0/firebase-analytics-compat.js"></script>
-    <script defer src="/__/firebase/11.1.0/firebase-remote-config-compat.js"></script>
-    <script defer src="/__/firebase/11.1.0/firebase-performance-compat.js"></script>
-    <!-- 
-      initialize the SDK after all desired features are loaded, set useEmulator to false
-      to avoid connecting the SDK to running emulators.
-    -->
-    <script defer src="/__/firebase/init.js?useEmulator=true"></script>
+    .motion-card {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
 
-    <style media="screen">
-      body { background: #ECEFF1; color: rgba(0,0,0,0.87); font-family: Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-      #message { background: white; max-width: 360px; margin: 100px auto 16px; padding: 32px 24px; border-radius: 3px; }
-      #message h2 { color: #ffa100; font-weight: bold; font-size: 16px; margin: 0 0 8px; }
-      #message h1 { font-size: 22px; font-weight: 300; color: rgba(0,0,0,0.6); margin: 0 0 16px;}
-      #message p { line-height: 140%; margin: 16px 0 24px; font-size: 14px; }
-      #message a { display: block; text-align: center; background: #039be5; text-transform: uppercase; text-decoration: none; color: white; padding: 16px; border-radius: 4px; }
-      #message, #message a { box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24); }
-      #load { color: rgba(0,0,0,0.4); text-align: center; font-size: 13px; }
-      @media (max-width: 600px) {
-        body, #message { margin-top: 0; background: white; box-shadow: none; }
-        body { border-top: 16px solid #ffa100; }
-      }
-    </style>
-  </head>
-  <body>
-    <div id="message">
-      <h2>Welcome</h2>
-      <h1>Firebase Hosting Setup Complete</h1>
-      <p>You're seeing this because you've successfully setup Firebase Hosting. Now it's time to go build something extraordinary!</p>
-      <a target="_blank" href="https://firebase.google.com/docs/hosting/">Open Hosting Documentation</a>
+    .motion-card button {
+      margin-left: 10px;
+    }
+
+    .error {
+      color: red;
+      font-size: 0.9em;
+    }
+
+    .dialog {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      border: 1px solid #ccc;
+      padding: 20px;
+      z-index: 1000;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+      display: none;
+    }
+
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 999;
+      display: none;
+    }
+
+    .timer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+    }
+
+    .timer-display {
+      font-size: 1.5em;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .timer-controls button {
+      margin: 0 10px;
+    }
+
+    .speaker-list {
+      margin-top: 20px;
+    }
+
+    .speaker-list ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .speaker-list li {
+      margin-bottom: 5px;
+    }
+
+    .now-speaking {
+      margin-top: 20px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>MUN Motion Manager</h1>
+  <button id="add-motion">Add Motion</button>
+
+  <section id="motions">
+    <h2>Motions</h2>
+    <div id="motion-list"></div>
+  </section>
+
+  <!-- Motion Dialog -->
+  <div class="overlay" id="overlay"></div>
+  <div class="dialog" id="motion-dialog">
+    <h3>Add Motion</h3>
+    <label>
+      Topic: <input type="text" id="motion-topic" required>
+    </label>
+    <br><br>
+    <label>
+      Presenter: <input type="text" id="motion-presenter" required>
+    </label>
+    <br><br>
+    <label>Total Time & Speaking Time:</label>
+    <div>
+      <button data-time="5-30">5 min / 30 sec</button>
+      <button data-time="10-60">10 min / 1 min</button>
+      <button data-time="5-60">5 min / 1 min</button>
+      <button data-time="9-45">9 min / 45 sec</button>
     </div>
-    <p id="load">Firebase SDK Loading&hellip;</p>
+    <label>
+      Custom: Total Time (min): <input type="number" id="total-time" min="1"> Speaking Time (sec): <input type="number" id="speaking-time" min="1">
+    </label>
+    <p class="error" id="error-msg"></p>
+    <br>
+    <button id="submit-motion">Submit</button>
+    <button id="cancel-motion">Cancel</button>
+  </div>
 
-    <script>
-      document.addEventListener('DOMContentLoaded', function() {
-        const loadEl = document.querySelector('#load');
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
-        // // The Firebase SDK is initialized and available here!
-        //
-        // firebase.auth().onAuthStateChanged(user => { });
-        // firebase.database().ref('/path/to/ref').on('value', snapshot => { });
-        // firebase.firestore().doc('/foo/bar').get().then(() => { });
-        // firebase.functions().httpsCallable('yourFunction')().then(() => { });
-        // firebase.messaging().requestPermission().then(() => { });
-        // firebase.storage().ref('/path/to/ref').getDownloadURL().then(() => { });
-        // firebase.analytics(); // call to activate
-        // firebase.analytics().logEvent('tutorial_completed');
-        // firebase.performance(); // call to activate
-        //
-        // // 🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥
+  <!-- Timer Dialog -->
+  <div class="dialog" id="timer-dialog">
+    <h3>Timer</h3>
+    <div class="timer-display" id="timer-display"></div>
+    <div class="timer-controls">
+      <button id="start-timer">Start</button>
+      <button id="stop-timer">Stop</button>
+      <button id="reset-timer">Yield to Chair</button>
+      <button id="close-timer">Close</button>
+    </div>
+    <div class="speaker-list">
+      <h4>Speakers</h4>
+      <ul id="speaker-list"></ul>
+      <button id="add-speaker">Add Speaker</button>
+    </div>
+    <div class="now-speaking" id="now-speaking"></div>
+  </div>
 
-        try {
-          let app = firebase.app();
-          let features = [
-            'auth', 
-            'database', 
-            'firestore',
-            'functions',
-            'messaging', 
-            'storage', 
-            'analytics', 
-            'remoteConfig',
-            'performance',
-          ].filter(feature => typeof app[feature] === 'function');
-          loadEl.textContent = `Firebase SDK loaded with ${features.join(', ')}`;
-        } catch (e) {
-          console.error(e);
-          loadEl.textContent = 'Error loading the Firebase SDK, check the console.';
+  <!-- Presenter Choice Modal -->
+  <div class="dialog" id="presenter-choice-dialog">
+    <h3>Presenter Placement</h3>
+    <p>Would you like the presenter to speak first or last?</p>
+    <button id="presenter-first">First</button>
+    <button id="presenter-last">Last</button>
+  </div>
+
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const addMotionButton = document.getElementById('add-motion');
+      const motionDialog = document.getElementById('motion-dialog');
+      const overlay = document.getElementById('overlay');
+      const motionList = document.getElementById('motion-list');
+      const errorMsg = document.getElementById('error-msg');
+
+      const topicInput = document.getElementById('motion-topic');
+      const presenterInput = document.getElementById('motion-presenter');
+      const totalTimeInput = document.getElementById('total-time');
+      const speakingTimeInput = document.getElementById('speaking-time');
+      const submitMotionButton = document.getElementById('submit-motion');
+      const cancelMotionButton = document.getElementById('cancel-motion');
+
+      const timerDialog = document.getElementById('timer-dialog');
+      const timerDisplay = document.getElementById('timer-display');
+      const startTimerButton = document.getElementById('start-timer');
+      const stopTimerButton = document.getElementById('stop-timer');
+      const resetTimerButton = document.getElementById('reset-timer');
+      const closeTimerButton = document.getElementById('close-timer');
+
+      const nowSpeakingDisplay = document.getElementById('now-speaking');
+
+      const presenterChoiceDialog = document.getElementById('presenter-choice-dialog');
+      const presenterFirstButton = document.getElementById('presenter-first');
+      const presenterLastButton = document.getElementById('presenter-last');
+
+      const speakerList = document.getElementById('speaker-list');
+      const addSpeakerButton = document.getElementById('add-speaker');
+
+      let selectedTime = null;
+      let totalTime, speakingTime;
+      let totalTimer, speakingTimer;
+      let totalRemaining, speakingRemaining;
+      let maxSpeakers, speakers = [];
+      let presenterPosition = null;
+
+      addMotionButton.addEventListener('click', () => {
+        motionDialog.style.display = 'block';
+        overlay.style.display = 'block';
+      });
+
+      cancelMotionButton.addEventListener('click', () => {
+        motionDialog.style.display = 'none';
+        overlay.style.display = 'none';
+      });
+
+      document.querySelectorAll('[data-time]').forEach(button => {
+        button.addEventListener('click', (e) => {
+          selectedTime = e.target.dataset.time.split('-');
+          totalTimeInput.value = selectedTime[0];
+          speakingTimeInput.value = selectedTime[1];
+        });
+      });
+
+      submitMotionButton.addEventListener('click', () => {
+        const topic = topicInput.value;
+        const presenter = presenterInput.value;
+        totalTime = parseInt(totalTimeInput.value, 10);
+        speakingTime = parseInt(speakingTimeInput.value, 10);
+
+        if (!topic || !presenter || !totalTime || !speakingTime || totalTime * 60 % speakingTime !== 0) {
+          errorMsg.textContent = 'Please enter valid details. Speaking time must divide evenly into total time.';
+          return;
+        }
+
+        maxSpeakers = Math.floor((totalTime * 60) / speakingTime);
+        speakers = new Array(maxSpeakers).fill(null);
+
+        const motionCard = document.createElement('div');
+        motionCard.className = 'motion-card';
+        motionCard.innerHTML = `
+          <span><strong>${topic}</strong> by ${presenter} (${totalTime} min / ${speakingTime} sec)</span>
+          <button class="pass-motion">Pass</button>
+        `;
+
+        motionList.appendChild(motionCard);
+        motionDialog.style.display = 'none';
+        overlay.style.display = 'none';
+        topicInput.value = '';
+        presenterInput.value = '';
+        totalTimeInput.value = '';
+        speakingTimeInput.value = '';
+        errorMsg.textContent = '';
+
+        motionCard.querySelector('.pass-motion').addEventListener('click', () => {
+          motionCard.querySelector('.pass-motion').textContent = 'Passed';
+          openPresenterChoiceDialog(presenter);
+        });
+      });
+
+      function openPresenterChoiceDialog(presenter) {
+        presenterChoiceDialog.style.display = 'block';
+        overlay.style.display = 'block';
+
+        presenterFirstButton.addEventListener('click', () => {
+          presenterPosition = 0;
+          speakers[0] = presenter;
+          presenterChoiceDialog.style.display = 'none';
+          overlay.style.display = 'none';
+          openTimerDialog();
+        }, { once: true });
+
+        presenterLastButton.addEventListener('click', () => {
+          presenterPosition = maxSpeakers - 1;
+          speakers[maxSpeakers - 1] = presenter;
+          presenterChoiceDialog.style.display = 'none';
+          overlay.style.display = 'none';
+          openTimerDialog();
+        }, { once: true });
+      }
+
+      function openTimerDialog() {
+        updateSpeakerList();
+        totalRemaining = totalTime * 60;
+        speakingRemaining = speakingTime;
+        updateTimerDisplay();
+        timerDialog.style.display = 'block';
+        overlay.style.display = 'block';
+      }
+
+      function updateSpeakerList() {
+        speakerList.innerHTML = '';
+        speakers.forEach((speaker, index) => {
+          const li = document.createElement('li');
+          li.textContent = speaker ? speaker : '';
+          speakerList.appendChild(li);
+        });
+      }
+
+      addSpeakerButton.addEventListener('click', () => {
+        const nextAvailable = speakers.indexOf(null);
+        if (nextAvailable !== -1) {
+          const speakerName = prompt('Enter speaker name:');
+          if (speakerName) {
+            speakers[nextAvailable] = speakerName;
+            updateSpeakerList();
+          }
+        } else {
+          alert('No more slots available for speakers.');
         }
       });
-    </script>
-  </body>
+
+      function updateTimerDisplay() {
+        const totalMinutes = Math.floor(totalRemaining / 60);
+        const totalSeconds = totalRemaining % 60;
+        const speakingMinutes = Math.floor(speakingRemaining / 60);
+        const speakingSeconds = speakingRemaining % 60;
+
+        timerDisplay.textContent = `Total: ${totalMinutes}:${totalSeconds.toString().padStart(2, '0')} | Speaking: ${speakingMinutes}:${speakingSeconds.toString().padStart(2, '0')}`;
+        const currentSpeaker = speakers.find(speaker => speaker);
+        nowSpeakingDisplay.textContent = currentSpeaker ? `Now Speaking: ${currentSpeaker}` : 'Now Speaking: None';
+      }
+
+      function startTimer() {
+        if (totalTimer || speakingTimer) return;
+
+        totalTimer = setInterval(() => {
+          if (totalRemaining > 0) {
+            totalRemaining--;
+            updateTimerDisplay();
+          } else {
+            stopTimer();
+          }
+        }, 1000);
+
+        speakingTimer = setInterval(() => {
+          if (speakingRemaining > 0) {
+            speakingRemaining--;
+            updateTimerDisplay();
+          } else {
+            speakingRemaining = speakingTime;
+            const finishedSpeaker = speakers.shift();
+            if (finishedSpeaker) {
+              speakers.push(null);
+            }
+            updateSpeakerList();
+            updateTimerDisplay();
+          }
+        }, 1000);
+      }
+
+      function stopTimer() {
+        clearInterval(totalTimer);
+        clearInterval(speakingTimer);
+        totalTimer = null;
+        speakingTimer = null;
+      }
+
+      function resetTimer() {
+  // Reset the speaking timer
+  speakingRemaining = speakingTime;
+
+  // Remove the current speaker and move to the next one
+  const finishedSpeaker = speakers.shift(); // Remove the first speaker
+  if (finishedSpeaker) {
+    speakers.push(null); // Add an empty slot at the end
+  }
+
+  // Update the UI to reflect the speaker list and the "Now Speaking" section
+  updateSpeakerList();
+  updateTimerDisplay();
+}
+
+
+      startTimerButton.addEventListener('click', startTimer);
+      stopTimerButton.addEventListener('click', stopTimer);
+      resetTimerButton.addEventListener('click', resetTimer);
+      closeTimerButton.addEventListener('click', () => {
+        timerDialog.style.display = 'none';
+        overlay.style.display = 'none';
+        stopTimer();
+      });
+    });
+  </script>
+</body>
 </html>
