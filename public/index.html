@@ -87,15 +87,30 @@
       margin-top: 20px;
       font-weight: bold;
     }
+
+    #add-motion {
+      background-color: orange;
+      outline: none;
+      border: none;
+      width: fit-content;
+      padding: 2%;
+      font-size: large;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    #motion-list {
+      padding: 5%;
+    }
   </style>
 </head>
 
 <body>
   <h1>FireCommand</h1>
-  <button id="add-motion">Add Motion</button>
 
   <section id="motions">
     <h2>Motions</h2>
+    <button id="add-motion">Add Motion</button>
     <div id="motion-list"></div>
   </section>
 
