@@ -21,3 +21,5 @@ jobs:
         repoToken: ${{ secrets.GITHUB_TOKEN }}
         firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FIREBIRDMUN_E8C3B }}
         projectId: firebirdmun-e8c3b
+        channelId: live
+        
