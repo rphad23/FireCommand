@@ -13,13 +13,13 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '14' # Specify the Node.js version you want to use
+        node-version: '18' # Updated Node.js version
 
-    - name: Install dependencies
-      run: npm install
-      
-    - uses: FirebaseExtended/action-hosting-deploy@v0
+    - name: Deploy to Firebase Hosting
+      uses: FirebaseExtended/action-hosting-deploy@v0
       with:
         repoToken: ${{ secrets.GITHUB_TOKEN }}
         firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_FIREBIRDMUN_E8C3B }}
         projectId: firebirdmun-e8c3b
+        channelId: live
+        
